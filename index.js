@@ -112,3 +112,6 @@ function playgame(player, gameSteps, exp_rate) {
 for(let run=0; run<100; run++) {
     playgame(player, 6, 1);
 }
+
+//TODO
+//fix the chooseAction function
