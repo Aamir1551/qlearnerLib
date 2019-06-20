@@ -1,9 +1,15 @@
-function qtable(numStates, numAction) {
-    this.table = Array(numStates).fill(Array(numAction).fill(0));
+function qtable() {
+    this.table = new Proxy({}, {
+        get: function(object, property) {
+            return object.hasOwnProperty(property) ? object[property] : 0;
+        }
+    });
+    //numStates, numAction --parrameters
+    //this.table = Array(numStates).fill(Array(numAction).fill(0));
 }
 
 qtable.updateCell = function(l_r, gamma, reward, state, action, newState) {
-    this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState] - this.table[state][action]));
+    this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState]) - this.table[state][action]);
 }
 
 //actionMap is an array of the actions that can be done
@@ -17,7 +23,7 @@ function agent(initialState, _actionMap,  _getNewState, _isActionValid, _actionS
 
 
 //actionProbs is an array contianing probability of actions
-agent.prototype.chooseAction(actionsProbs) = function() {
+agent.prototype.chooseAction= function(actionsProbs) {
   let sumed = actionsProbs.reduce((a, b)=>a+b);
   let c = sumed * Math.random();
   let actionChosen = -1;
@@ -84,33 +90,25 @@ player = new agent([0,0], actionMap, getNextState, checkIsValidMovement, ['r', '
 function playgame(player, gameSteps, exp_rate) {
     
     for(let i=0; i<gameSteps; i++) {
+        let currrentState = player.state;
         
-        actions = brain.table[y*3+x-1];
-        current_state = player.actionMap
+        legalActions = player.actionMap[player.state.toString()];
         
         if(Math.random() > exp_rate) {
             //pick best action
-            do {
-                actionChosen = actions.indexOf(Math.max(...actions));
-            } while(player.checkIsValidMovement(player.state, actionChosen));
-        
+            actionChosen = brain.table[player.state.toString()].indexOf(Math.max(brain.state.toString()));
         } else {
-
             //perform random action
-            player.performAction()
-            actionChosen = player.actionMap[y*3+x-1][1]
-
-
-    }
+            actionChosen = legalActions[player.chooseAction(Array(legalActions.length).fill(1/legalActions))];
+        }
+        player.state = player.getNewState(actionChosen, player.state);
+        rewardRecieved = rewards[player.state];
+        brain.updateCell(0.01, 0.9, rewardRecieved, currrentState.toString(), actionChosen, player.state.toString())
 
   }
 
-
-
 }
 
-
-
-for(let i=0; i<100; i++) {
-  for(let )
+for(let run=0; run<100; run++) {
+    playgame(player, 6, 1);
 }
