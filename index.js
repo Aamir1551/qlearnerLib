@@ -1,15 +1,19 @@
 function qtable() {
-    this.table = new Proxy({}, {
-        get: function(object, property) {
-            return object.hasOwnProperty(property) ? object[property] : 0;
-        }
-    });
-    //numStates, numAction --parrameters
-    //this.table = Array(numStates).fill(Array(numAction).fill(0));
+  this.table = new Proxy({}, {
+    get: function(object, property) {
+      return object.hasOwnProperty(property) ? object[property] : [];
+    }
+  });
+  //numStates, numAction --parrameters
+  //this.table = Array(numStates).fill(Array(numAction).fill(0));
 }
 
-qtable.updateCell = function(l_r, gamma, reward, state, action, newState) {
-    this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState]) - this.table[state][action]);
+qtable.prototype.updateCell = function(l_r, gamma, reward, state, action, newState) {
+  this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState]) - this.table[state][action]);
+}
+
+qtable.prototype.getBestActionForState = function(state) {
+  return this.table[state.toString()].indexOf(Math.max(this.table[state.toString()]));
 }
 
 //actionMap is an array of the actions that can be done
@@ -38,18 +42,6 @@ function checkIsValidMovement(state, action) {
     return this.actionMap[state.toString()].indexOf(action) != -1;
 }
 
-map = [
-  [
-    [0, ["d", "r"]], [0, ["l", "r", "d"]], [0, ["l", "d"]]
-  ],
-  [
-    [0, ["u", "r", "d"]], [0,["u", "r", "l", "d"]], [0,["u", "l", "d"]]
-  ],
-  [
-    [0, ["u", "r"]], [0, ["u", "r", "l"]], [1, []]
-  ]
-]
-
 //for more complicated environments, the possible actions can be created via a function (same with rewards)
 actionMap = { 
     '0,0': [ 'd', 'r' ], 
@@ -68,13 +60,13 @@ rewards = {
 }
 
 function getNextState(action, state) { //this function is allowed to interact with the environment
-  if(this.actionMap[state.toString].indexOf(action) == -1) {
+  if(this.actionMap[state.toString()].indexOf(action) == -1) {
       return "invalid state";
   }
   if(action == 'd') {
-    state[1]+=3;
+    state[1]+=1;
   } else if(action=='u') {
-    state[1]-=3;
+    state[1]-=1;
   } else if(action=='r') {
     state[0]+=1;
   } else if(action=='l') {
@@ -90,19 +82,20 @@ player = new agent([0,0], actionMap, getNextState, checkIsValidMovement, ['r', '
 function playgame(player, gameSteps, exp_rate) {
     
     for(let i=0; i<gameSteps; i++) {
-        let currrentState = player.state;
+        let currrentState = player.state.toString();
         
         legalActions = player.actionMap[player.state.toString()];
         
         if(Math.random() > exp_rate) {
             //pick best action
-            actionChosen = brain.table[player.state.toString()].indexOf(Math.max(brain.state.toString()));
+            actionChosen = brain.getBestActionForState(player.state);
+            //actionChosen = brain.table[player.state.toString()].indexOf(Math.max(brain.state.toString()));
         } else {
             //perform random action
-            actionChosen = legalActions[player.chooseAction(Array(legalActions.length).fill(1/legalActions))];
+            actionChosen = legalActions[player.chooseAction(Array(legalActions.length).fill(1/legalActions.length))];
         }
         player.state = player.getNewState(actionChosen, player.state);
-        rewardRecieved = rewards[player.state];
+        rewardRecieved = rewards[player.state] ? rewards[player.state] : 0;
         brain.updateCell(0.01, 0.9, rewardRecieved, currrentState.toString(), actionChosen, player.state.toString())
 
   }
