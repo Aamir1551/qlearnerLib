@@ -3,9 +3,6 @@ function qtable(numStates, numActions) {
 }
 
 qtable.prototype.updateCell = function(l_r, gamma, reward, state, action, newState) {
-  console.log(l_r, gamma, reward, state, action, newState);
-  console.log(this.table[state][action]);
-  
   this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState]) - this.table[state][action]);
 }
 
@@ -13,7 +10,7 @@ qtable.prototype.getBestActionForState = function(state, legalActions) {
   let bestActionIndex = -1;
   let maxExpectedReward = Number.NEGATIVE_INFINITY;
   for(let i=0; i<legalActions; i++) {
-    if(this.table[state.toString()][legalActions[i]] > maxExpectedReward) {
+    if(this.table[state][legalActions[i]] > maxExpectedReward) {
       bestActionIndex = legalActions[i];
       maxExpectedReward = this.table[state][legalActions[i]];
     }
@@ -23,49 +20,37 @@ qtable.prototype.getBestActionForState = function(state, legalActions) {
 }
 
 //actionMap is an array of the actions that can be done
-function agent(initialState, _actionMap,  _getNewState, _isActionValid, _actionSet) {
+function agent(initialState, _actionMap,  _getNewState, _isActionValid) {
     this.state = initialState;
     this.actionMap = _actionMap;
     this.getNewState = _getNewState;
     this.isActionValid = _isActionValid;
-    this.actionSet = _actionSet;
-}
-
-agent.prototype.getActionID = function(action) {
-  return this.actionSet.indexOf(action); 
 }
 
 agent.prototype.getStateID = function(state) {
-  return Object.keys(this.actionMap).indexOf(state);
+  return Object.keys(this.actionMap).indexOf(state.toString());
 }
-
 
 //actionProbs is an array contianing probability of actions
-agent.prototype.chooseAction= function(actionsProbs) {
-  let sumed = actionsProbs.reduce((a, b)=>a+b);
-  let c = sumed * Math.random();
-  let actionChosen = -1;
-  while(c>0) {
-    actionChosen++;
-    c-=actionsProbs[actionChosen];
-  }
-  return actionChosen;
+agent.prototype.chooseRandomAction = function() {
+  return Math.floor(Math.random() * this.actionMap[this.state.toString()])
 }
 
-function checkIsValidMovement(state, action) {
-    return this.actionMap[state.toString()].indexOf(action) != -1;
+agent.prototype.getLegalActions = function() {
+  return this.actionMap[this.state.toString()];
 }
 
 //for more complicated environments, the possible actions can be created via a function (same with rewards)
+// [0=d, 1=u, 2=r, 3=l]
 actionMap = { 
-    '0,0': [ 'd', 'r' ], 
-    '1,0': [ 'l', 'r', 'd' ], 
-    '2,0': [ 'l', 'd' ],
-    '0,1': [ 'u', 'r', 'd' ],
-    '1,1': [ 'u', 'r', 'l', 'd' ],
-    '2,1': [ 'u', 'l', 'd' ],
-    '0,2': [ 'u', 'r' ],
-    '1,2': [ 'u', 'r', 'l' ],
+    '0,0': [ '0', '2' ], 
+    '1,0': [ '3', '2', '0' ], 
+    '2,0': [ '3', '0' ],
+    '0,1': [ '1', '2', '0' ],
+    '1,1': [ '1', '2', '3', '0' ],
+    '2,1': [ '1', '3', '0' ],
+    '0,2': [ '1', '2' ],
+    '1,2': [ '1', '2', '3' ],
     '2,2': []
 }
 
@@ -78,43 +63,37 @@ function getNextState(action, state) { //this function is allowed to interact wi
       return "invalid state";
   }
 
-  if(action == 'd') {
+  if(action == '0') {
     state[1]+=1;
-  } else if(action=='u') {
+  } else if(action=='1') {
     state[1]-=1;
-  } else if(action=='r') {
+  } else if(action=='2') {
     state[0]+=1;
-  } else if(action=='l') {
+  } else if(action=='3') {
     state[0]-=1;
   }
   return state;
 }
 
 
-brain = new qtable(3, 4); // [r, l, u, d]
-player = new agent([0,0], actionMap, getNextState, checkIsValidMovement, ['r', 'l', 'u', 'd']);
+brain = new qtable(9, 4); // [r, l, u, d]
+player = new agent([0,0], actionMap, getNextState, checkIsValidMovement);
 
 function playgame(player, gameSteps, exp_rate) {
     
     for(let i=0; i<gameSteps; i++) {
         let currentState = player.state.toString();
-        console.log(currentState);
-        legalActions = player.actionMap[player.state.toString()];
+        legalActions = player.getLegalActions();
         
         if(Math.random() > exp_rate) {
-            //pick best action
-            actionChosen = brain.getBestActionForState(player.state);
-            //actionChosen = brain.table[player.state.toString()].indexOf(Math.max(brain.state.toString()));
+            actionChosen = brain.getBestActionForState(player.state, legalActions);
         } else {
             //perform random action
-            console.log("sss");
-            console.log(legalActions);
-
-            actionChosen = legalActions[player.chooseAction(Array(legalActions.length).fill(1/legalActions.length))];
+            actionChosen = player.chooseRandomAction();
         }
         player.state = player.getNewState(actionChosen, player.state);
         rewardRecieved = rewards[player.state] ? rewards[player.state] : 0;
-        brain.updateCell(0.01, 0.9, rewardRecieved, player.getStateID(currentState.toString()), player.getActionID(actionChosen), player.getStateID(player.state.toString()));
+        brain.updateCell(0.01, 0.9, rewardRecieved, player.getStateID(currentState.toString()), actionChosen, player.getStateID(player.state.toString()));
 
   }
 
