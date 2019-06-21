@@ -56,11 +56,12 @@ actionMap = {
 }
 
 rewards = {
-    '2,2': 100
+    '2,2': 10
 }
 
 function getNextState(action, state) { //this function is allowed to interact with the environment
   if(this.actionMap[state.toString()].indexOf(action) == -1) {
+      console.log(action);
       return "invalid state";
   }
 
@@ -81,8 +82,14 @@ brain = new qtable(9, 4); // [r, l, u, d]
 player = new agent([0,0], actionMap, getNextState);
 
 function playgame(player, gameSteps, exp_rate) {
-    
+    player.state = [0,0]; 
     for(let i=0; i<gameSteps; i++) {
+        console.log("jjjj");
+        console.log(player.state);
+        if(player.state.toString() === [2, 2].toString()) {
+          console.log("hhh");
+          break;
+        }
         let currentState = player.state.toString();
         legalActions = player.getLegalActions();
         
@@ -92,15 +99,13 @@ function playgame(player, gameSteps, exp_rate) {
             //perform random action
             actionChosen = player.chooseRandomAction();
         }
-        
+
         player.state = player.getNewState(actionChosen, player.state);
         rewardRecieved = rewards[player.state] ? rewards[player.state] : 0;
         console.log(player.state);
         
         brain.updateCell(0.01, 0.9, rewardRecieved, player.getStateID(currentState.toString()), actionChosen, player.getStateID(player.state.toString()));
-        if(player.state.toString() === [2, 2].toString()) {
-          break;
-        }
+        
   }
 
 }
