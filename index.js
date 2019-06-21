@@ -1,19 +1,25 @@
-function qtable() {
-  this.table = new Proxy({}, {
-    get: function(object, property) {
-      return object.hasOwnProperty(property) ? object[property] : [];
-    }
-  });
-  //numStates, numAction --parrameters
-  //this.table = Array(numStates).fill(Array(numAction).fill(0));
+function qtable(numStates, numActions) {
+  this.table = Array(numStates).fill(Array(numActions).fill(0));
 }
 
 qtable.prototype.updateCell = function(l_r, gamma, reward, state, action, newState) {
+  console.log(l_r, gamma, reward, state, action, newState);
+  console.log(this.table[state][action]);
+  
   this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState]) - this.table[state][action]);
 }
 
-qtable.prototype.getBestActionForState = function(state) {
-  return this.table[state.toString()].indexOf(Math.max(this.table[state.toString()]));
+qtable.prototype.getBestActionForState = function(state, legalActions) {
+  let bestActionIndex = -1;
+  let maxExpectedReward = Number.NEGATIVE_INFINITY;
+  for(let i=0; i<legalActions; i++) {
+    if(this.table[state.toString()][legalActions[i]] > maxExpectedReward) {
+      bestActionIndex = legalActions[i];
+      maxExpectedReward = this.table[state][legalActions[i]];
+    }
+
+  }
+  return bestActionIndex;
 }
 
 //actionMap is an array of the actions that can be done
@@ -23,6 +29,14 @@ function agent(initialState, _actionMap,  _getNewState, _isActionValid, _actionS
     this.getNewState = _getNewState;
     this.isActionValid = _isActionValid;
     this.actionSet = _actionSet;
+}
+
+agent.prototype.getActionID = function(action) {
+  return this.actionSet.indexOf(action); 
+}
+
+agent.prototype.getStateID = function(state) {
+  return Object.keys(this.actionMap).indexOf(state);
 }
 
 
@@ -63,6 +77,7 @@ function getNextState(action, state) { //this function is allowed to interact wi
   if(this.actionMap[state.toString()].indexOf(action) == -1) {
       return "invalid state";
   }
+
   if(action == 'd') {
     state[1]+=1;
   } else if(action=='u') {
@@ -82,8 +97,8 @@ player = new agent([0,0], actionMap, getNextState, checkIsValidMovement, ['r', '
 function playgame(player, gameSteps, exp_rate) {
     
     for(let i=0; i<gameSteps; i++) {
-        let currrentState = player.state.toString();
-        
+        let currentState = player.state.toString();
+        console.log(currentState);
         legalActions = player.actionMap[player.state.toString()];
         
         if(Math.random() > exp_rate) {
@@ -92,11 +107,14 @@ function playgame(player, gameSteps, exp_rate) {
             //actionChosen = brain.table[player.state.toString()].indexOf(Math.max(brain.state.toString()));
         } else {
             //perform random action
+            console.log("sss");
+            console.log(legalActions);
+
             actionChosen = legalActions[player.chooseAction(Array(legalActions.length).fill(1/legalActions.length))];
         }
         player.state = player.getNewState(actionChosen, player.state);
         rewardRecieved = rewards[player.state] ? rewards[player.state] : 0;
-        brain.updateCell(0.01, 0.9, rewardRecieved, currrentState.toString(), actionChosen, player.state.toString())
+        brain.updateCell(0.01, 0.9, rewardRecieved, player.getStateID(currentState.toString()), player.getActionID(actionChosen), player.getStateID(player.state.toString()));
 
   }
 
@@ -105,6 +123,3 @@ function playgame(player, gameSteps, exp_rate) {
 for(let run=0; run<100; run++) {
     playgame(player, 6, 1);
 }
-
-//TODO
-//fix the chooseAction function
