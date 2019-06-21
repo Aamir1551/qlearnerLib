@@ -3,6 +3,7 @@ function qtable(numStates, numActions) {
 }
 
 qtable.prototype.updateCell = function(l_r, gamma, reward, state, action, newState) {
+  console.log(l_r, gamma, reward, state, action, newState);
   this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState]) - this.table[state][action]);
 }
 
@@ -20,11 +21,10 @@ qtable.prototype.getBestActionForState = function(state, legalActions) {
 }
 
 //actionMap is an array of the actions that can be done
-function agent(initialState, _actionMap,  _getNewState, _isActionValid) {
+function agent(initialState, _actionMap,  _getNewState) {
     this.state = initialState;
     this.actionMap = _actionMap;
     this.getNewState = _getNewState;
-    this.isActionValid = _isActionValid;
 }
 
 agent.prototype.getStateID = function(state) {
@@ -33,7 +33,8 @@ agent.prototype.getStateID = function(state) {
 
 //actionProbs is an array contianing probability of actions
 agent.prototype.chooseRandomAction = function() {
-  return Math.floor(Math.random() * this.actionMap[this.state.toString()])
+  let legalActions = this.getLegalActions();
+  return legalActions[Math.floor(Math.random() * legalActions.length)]
 }
 
 agent.prototype.getLegalActions = function() {
@@ -77,7 +78,7 @@ function getNextState(action, state) { //this function is allowed to interact wi
 
 
 brain = new qtable(9, 4); // [r, l, u, d]
-player = new agent([0,0], actionMap, getNextState, checkIsValidMovement);
+player = new agent([0,0], actionMap, getNextState);
 
 function playgame(player, gameSteps, exp_rate) {
     
@@ -91,14 +92,19 @@ function playgame(player, gameSteps, exp_rate) {
             //perform random action
             actionChosen = player.chooseRandomAction();
         }
+        if(player.state === [2, 2]) {
+          break;
+        }
         player.state = player.getNewState(actionChosen, player.state);
         rewardRecieved = rewards[player.state] ? rewards[player.state] : 0;
+        console.log(player.state);
+        
         brain.updateCell(0.01, 0.9, rewardRecieved, player.getStateID(currentState.toString()), actionChosen, player.getStateID(player.state.toString()));
 
   }
 
 }
 
-for(let run=0; run<100; run++) {
+for(let run=0; run<3; run++) {
     playgame(player, 6, 1);
 }
