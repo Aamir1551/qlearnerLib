@@ -9,7 +9,7 @@ qtable.prototype.updateCell = function(l_r, gamma, reward, state, action, newSta
 qtable.prototype.getBestActionForState = function(state, legalActions) {
   let bestActionIndex = -1;
   let maxExpectedReward = Number.NEGATIVE_INFINITY;
-  for(let i=0; i<legalActions; i++) {
+  for(let i=0; i<legalActions.length; i++) {
     if(this.table[state][legalActions[i]] > maxExpectedReward) {
       bestActionIndex = legalActions[i];
       maxExpectedReward = this.table[state][legalActions[i]];
@@ -89,7 +89,8 @@ function playgame(player, gameSteps, exp_rate) {
         legalActions = player.getLegalActions();
         
         if(Math.random() > exp_rate) {
-            actionChosen = brain.getBestActionForState(player.state, legalActions);
+            actionChosen = brain.getBestActionForState(player.getStateID(player.state), legalActions);
+            console.log(player.state, actionChosen);
         } else {
             //perform random action
             actionChosen = player.chooseRandomAction();
@@ -112,3 +113,7 @@ for(let i=0; i<brain.table.length; i++) {
   cheatSheet.push(s);
 }
 console.log(cheatSheet);
+
+for(let i=0; i<1;i++) {
+  playgame(player, 6, 0);
+}
