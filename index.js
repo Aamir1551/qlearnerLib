@@ -1,9 +1,8 @@
 function qtable(numStates, numActions) {
-  this.table = Array(numStates).fill(Array(numActions).fill(0));
+  this.table = new Array(numStates).fill(0).map(a=>new Array(numActions).fill(0));
 }
 
 qtable.prototype.updateCell = function(l_r, gamma, reward, state, action, newState) {
-  console.log(l_r, gamma, reward, state, action, newState);
   this.table[state][action] += l_r * (reward + gamma * Math.max(...this.table[newState]) - this.table[state][action]);
 }
 
@@ -56,12 +55,11 @@ actionMap = {
 }
 
 rewards = {
-    '2,2': 10
+    '2,2': 100
 }
 
 function getNextState(action, state) { //this function is allowed to interact with the environment
   if(this.actionMap[state.toString()].indexOf(action) == -1) {
-      console.log(action);
       return "invalid state";
   }
 
@@ -84,10 +82,7 @@ player = new agent([0,0], actionMap, getNextState);
 function playgame(player, gameSteps, exp_rate) {
     player.state = [0,0]; 
     for(let i=0; i<gameSteps; i++) {
-        console.log("jjjj");
-        console.log(player.state);
         if(player.state.toString() === [2, 2].toString()) {
-          console.log("hhh");
           break;
         }
         let currentState = player.state.toString();
@@ -99,12 +94,9 @@ function playgame(player, gameSteps, exp_rate) {
             //perform random action
             actionChosen = player.chooseRandomAction();
         }
-
         player.state = player.getNewState(actionChosen, player.state);
         rewardRecieved = rewards[player.state] ? rewards[player.state] : 0;
-        console.log(player.state);
-        
-        brain.updateCell(0.01, 0.9, rewardRecieved, player.getStateID(currentState.toString()), actionChosen, player.getStateID(player.state.toString()));
+        brain.updateCell(0.98, 0.1, rewardRecieved, player.getStateID(currentState.toString()), actionChosen, player.getStateID(player.state.toString()));
         
   }
 
@@ -113,3 +105,10 @@ function playgame(player, gameSteps, exp_rate) {
 for(let run=0; run<100; run++) {
     playgame(player, 6, 1);
 }
+
+cheatSheet = [];
+for(let i=0; i<brain.table.length; i++) {
+  s = brain.table[i].indexOf(Math.max(...brain.table[i]));
+  cheatSheet.push(s);
+}
+console.log(cheatSheet);
