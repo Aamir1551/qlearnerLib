@@ -56,7 +56,7 @@ actionMap = {
 }
 
 rewards = {
-    '2,2': 0
+    '2,2': 100
 }
 
 function getNextState(action, state) { //this function is allowed to interact with the environment
@@ -92,19 +92,19 @@ function playgame(player, gameSteps, exp_rate) {
             //perform random action
             actionChosen = player.chooseRandomAction();
         }
-        if(player.state === [2, 2]) {
-          break;
-        }
+        
         player.state = player.getNewState(actionChosen, player.state);
         rewardRecieved = rewards[player.state] ? rewards[player.state] : 0;
         console.log(player.state);
         
         brain.updateCell(0.01, 0.9, rewardRecieved, player.getStateID(currentState.toString()), actionChosen, player.getStateID(player.state.toString()));
-
+        if(player.state.toString() === [2, 2].toString()) {
+          break;
+        }
   }
 
 }
 
-for(let run=0; run<3; run++) {
+for(let run=0; run<100; run++) {
     playgame(player, 6, 1);
 }
